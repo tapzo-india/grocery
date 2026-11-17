@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Grocery List</title>
+<meta name="theme-color" content="#2f6f5e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9eeec; --paper:#fffefb; --ink:#1f2a27; --muted:#7b8a85;
+  --rule:#cfe0e8; --margin:#e58a8a; --accent:#2f6f5e; --accent-ink:#fff;
+  --wa:#1fa855; --danger:#c0392b; --line-h:48px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#141a18; --paper:#1d2623; --ink:#e8efec; --muted:#8fa19b;
+    --rule:#2c3a36; --margin:#8a4a4a; --accent:#5fb89e; --accent-ink:#0f1d19; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.wrap{max-width:520px;margin:0 auto;padding:16px 14px 40px}
+.pad{
+  background:var(--paper); border-radius:6px;
+  box-shadow:0 1px 0 rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.08);
+  overflow:hidden;
+}
+.top{background:var(--accent);color:var(--accent-ink);padding:14px 18px 10px;display:flex;align-items:baseline;justify-content:space-between}
+h1{font:700 34px/1 Caveat,"Segoe Script","Bradley Hand",cursive;margin:0}
+.count{font-size:14px;opacity:.85}
+.add{display:flex;gap:8px;padding:12px 14px 12px 58px;border-bottom:2px solid var(--rule);position:relative}
+.add input{
+  flex:1;min-width:0;font:inherit;color:var(--ink);background:transparent;
+  border:0;border-bottom:2px solid var(--rule);padding:10px 2px;outline:none;border-radius:0
+}
+.add input:focus{border-color:var(--accent)}
+.add button{
+  font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);
+  border:0;border-radius:8px;padding:0 16px;min-height:44px;cursor:pointer
+}
+ul{list-style:none;margin:0;padding:0;position:relative;
+  background-image:linear-gradient(to right,transparent 46px,var(--margin) 46px,var(--margin) 48px,transparent 48px)}
+li{
+  display:flex;align-items:center;min-height:var(--line-h);
+  border-bottom:1px solid var(--rule);padding:0 8px 0 0;
+}
+li .tick{
+  width:48px;height:var(--line-h);flex:none;display:grid;place-items:center;
+  background:none;border:0;cursor:pointer;color:var(--ink);
+}
+.box{width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;display:grid;place-items:center;background:var(--paper)}
+li.done .box{background:var(--accent);border-color:var(--accent)}
+li.done .box::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+li .txt{flex:1;padding:8px 10px;word-break:break-word;cursor:pointer}
+li.done .txt{text-decoration:line-through;color:var(--muted)}
+li .del{
+  width:44px;height:44px;flex:none;background:none;border:0;cursor:pointer;
+  color:var(--muted);font-size:22px;border-radius:8px
+}
+li .del:active{color:var(--danger)}
+.empty{padding:28px 20px 28px 64px;color:var(--muted)}
+.actions{padding:16px 14px;display:grid;gap:10px}
+.btn{
+  font:inherit;font-weight:600;border:0;border-radius:10px;min-height:50px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px
+}
+.wa{background:var(--wa);color:#fff}
+.share{background:var(--accent);color:var(--accent-ink)}
+.ghost{background:transparent;color:var(--muted);border:1.5px solid var(--rule);min-height:44px;font-weight:500}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.add input:focus-visible,li button:focus-visible,.txt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.foot{text-align:center;margin-top:18px;font-size:14px;color:var(--muted)}
+.foot a{color:var(--accent);font-weight:600;text-decoration:none}
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-size:15px;
+  opacity:0;pointer-events:none;transition:.2s
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pad">
+    <div class="top"><h1>Grocery list</h1><span class="count" id="count"></span></div>
+    <div class="add">
+      <input id="item" type="text" placeholder="Add an item" autocomplete="off" enterkeyhint="done" maxlength="80" aria-label="New item">
+      <button id="addBtn" type="button">Add</button>
+    </div>
+    <ul id="list" aria-live="polite"></ul>
+    <div class="actions">
+      <button class="btn wa" id="waBtn" type="button">Send on WhatsApp</button>
+      <div class="row">
+        <button class="btn share" id="shareBtn" type="button">Share…</button>
+        <button class="btn share" id="copyBtn" type="button">Copy list</button>
+      </div>
+      <button class="btn ghost" id="clearBtn" type="button">Remove ticked items</button>
+    </div>
+  </div>
+  <!-- EDIT: replace the link below with your shop / order page -->
+  <p class="foot">Love this magnet? Whatsapp-8274919780 to Order <a href="https://www.instagram.com/tapzo_india/" target="_blank" rel="noopener">Order one for a friend</a></p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  var KEY = 'groceryList.v1';
+  var items = load();
+  var $ = function(id){ return document.getElementById(id); };
+  var listEl = $('list'), input = $('item');
+
+  function load(){
+    try { var d = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(d) ? d : []; }
+    catch(e){ return []; }
+  }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){}
+  }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function render(){
+    listEl.innerHTML = '';
+    if(!items.length){
+      var e = document.createElement('li');
+      e.className = 'empty'; e.style.display = 'block';
+      e.textContent = 'Your list is empty. Add what you need above.';
+      listEl.appendChild(e);
+    }
+    items.forEach(function(it){
+      var li = document.createElement('li');
+      if(it.done) li.className = 'done';
+
+      var tick = document.createElement('button');
+      tick.className = 'tick'; tick.type = 'button';
+      tick.setAttribute('aria-label', (it.done ? 'Untick ' : 'Tick ') + it.text);
+      tick.innerHTML = '<span class="box"></span>';
+      tick.onclick = function(){ toggle(it.id); };
+
+      var txt = document.createElement('span');
+      txt.className = 'txt'; txt.textContent = it.text;
+      txt.onclick = function(){ toggle(it.id); };
+
+      var del = document.createElement('button');
+      del.className = 'del'; del.type = 'button'; del.textContent = '×';
+      del.setAttribute('aria-label', 'Delete ' + it.text);
+      del.onclick = function(){ remove(it.id); };
+
+      li.appendChild(tick); li.appendChild(txt); li.appendChild(del);
+      listEl.appendChild(li);
+    });
+    var left = items.filter(function(i){ return !i.done; }).length;
+    $('count').textContent = items.length ? left + ' to buy' : '';
+    var has = items.length > 0;
+    ['waBtn','shareBtn','copyBtn'].forEach(function(id){ $(id).disabled = !has; });
+    $('clearBtn').disabled = !items.some(function(i){ return i.done; });
+  }
+
+  function add(){
+    var t = input.value.trim();
+    if(!t) return;
+    items.push({ id: uid(), text: t, done: false });
+    input.value = ''; save(); render(); input.focus();
+  }
+  function toggle(id){
+    items.forEach(function(i){ if(i.id === id) i.done = !i.done; });
+    save(); render();
+  }
+  function remove(id){
+    items = items.filter(function(i){ return i.id !== id; });
+    save(); render();
+  }
+
+  // Text of the list: only items still to buy
+  function listText(){
+    var open = items.filter(function(i){ return !i.done; });
+    if(!open.length) open = items;
+    return 'Grocery list\n\n' + open.map(function(i){ return '• ' + i.text; }).join('\n');
+  }
+
+  function toast(msg){
+    var t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('on'); }, 1800);
+  }
+
+  function copy(){
+    var text = listText();
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast('List copied'); }, fallback);
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('List copied'); } catch(e){ toast('Could not copy'); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  $('addBtn').onclick = add;
+  input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); add(); } });
+  $('waBtn').onclick = function(){
+    window.open('https://wa.me/?text=' + encodeURIComponent(listText()), '_blank');
+  };
+  $('shareBtn').onclick = function(){
+    if(navigator.share){
+      navigator.share({ title: 'Grocery list', text: listText() }).catch(function(){});
+    } else copy();
+  };
+  $('copyBtn').onclick = copy;
+  $('clearBtn').onclick = function(){
+    items = items.filter(function(i){ return !i.done; });
+    save(); render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
